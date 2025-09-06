@@ -1,0 +1,114 @@
+@startuml DFD
+
+
+package "Регистрация" {
+  actor "Пациент" as patient
+  rectangle "Заполнение формы" as form_filling
+  database "Список пациентов\n[Excel-файл] " as patients_db
+  actor "Сотрудник Ресепшн" as receptionist
+  rectangle "Регистрация" as form_processing
+  database "Файлы пациента\n[Директория пациента]" as patient_folder
+  process "Шифрование" as psh5 #pink
+  process "Шифрование" as psh6 #pink
+  process "Маскирование" as msk3 #pink
+  process "Токенизация" as tkn3 #pink
+  
+  patient --> form_filling : Данные пациента
+  form_filling --> receptionist : Данные с формы
+  receptionist --> form_processing : Данные с формы
+  form_processing --> tkn3
+  tkn3 --> psh6
+  psh6 --> patients_db : Данные с формы
+  tkn3 --> psh5
+  psh5 --> patient_folder : Данные с формы 
+  form_processing --> msk3
+  msk3 --> patient : Результат регистрации
+}
+
+package "Запись к доктору" {
+  actor "Пациент" as patient2
+  actor "Сотрудник Ресепшн" as receptionist2
+  rectangle "Запись к доктору" as doctor_booking
+  database "Журнал записей к докторам\n[Excel-файл]" as booking_journal
+  rectangle "Идентификация пациента" as patient_identification
+  database "Список пациентов\n[Excel файл]" as patients_db2
+  process "Шифрование" as psh3 #pink
+  process "Шифрование" as psh4 #pink
+  process "Маскирование" as msk4 #pink
+  process "Маскирование" as msk5 #pink
+  
+  patient2 --> receptionist2 : ФИО, Номер телефона
+  receptionist2 --> patient_identification : Данные пациента
+  patient_identification --> msk4
+  msk4 --> receptionist2 : Данные пациента
+  patient_identification --> psh3
+  psh3 --> patients_db2 : Данные пациента
+  receptionist2 --> doctor_booking : Доктор, время приема
+  doctor_booking --> psh4
+  psh4 --> booking_journal : Доктор, время приема
+  doctor_booking --> msk5
+  msk5 --> receptionist2 : Данные из журнала
+}
+
+package "Проведение оплаты" {
+  actor "Пациент" as patient3
+  actor "Кассир" as cashier
+  rectangle "Проведение платежа" as accounting_payment
+  rectangle "Информирование пациента" as notify_patient
+  database "Принятые платежи\n[ККМ]" as kkm
+  database "Принятые платежи\n[1C Бухгалтерия]" as accounting_system
+  process "Токенизация" as tkn2 #pink
+  process "Маскирование" as msk2 #pink
+  
+  patient3 --> cashier : Данные пациента для оплаты
+  cashier --> accounting_payment : Данные пациента и платежные данные
+  accounting_payment --> cashier : Результат оплаты
+  accounting_payment --> kkm : Данные пациента и платежные данные
+  kkm --> tkn2
+  tkn2 --> accounting_system : Данные пациента и платежные данные
+  cashier --> msk2
+  msk2 --> notify_patient : Результат оплаты
+  notify_patient --> patient3 : Результат оплаты
+}
+
+package "Прием пациента" {
+  actor "Пациент" as patient4
+  actor "Доктор" as doctor
+  rectangle "Проверка записи пациента" as checking_patient
+  rectangle "Анализ данных пациента.\nФиксирование данных приема" as patient_analysis
+  database "Журнал записи к доктору\n[Excel файл]" as booking_journal2
+  database "Файлы пациента\n[Директория пациента]" as patient_folder2
+  process "Шифрование" as psh #pink
+  process "Шифрование" as psh2 #pink
+  
+  patient4 --> doctor : Данные пациента
+  doctor --> checking_patient : Данные пациента
+  checking_patient --> psh
+  psh --> booking_journal2 : Данные пациента
+  checking_patient --> doctor : Данные о записи к доктору
+  doctor --> patient_analysis : Данные пациента
+  patient_analysis --> psh2
+  psh2 --> patient_folder2 : Добавление данных
+  doctor --> patient4 : Результат приема
+}
+
+package "Бухгалтерия" {
+  actor "Бухгалтер" as accountant
+  rectangle "Кадровый учет\nНачисление зарплаты" as hr
+  rectangle "Процессинг платежей" as payment_processing
+  database "Бухгалтерия предприятия\n[1C Бухгалтерия]" as accounting_db
+  process "Токенизация" as tkn #pink
+  process "Маскирование" as msk #pink
+  database "Принятые платежи\n[1C Бухгалтерия]" as payment_journal2
+  
+  accountant --> hr : Данные сотрудников
+  hr --> accounting_db: Данные сотрудников
+  payment_processing --> tkn
+  tkn --> payment_journal2 : Данные платежей
+  accounting_db --> payment_processing : Данные платежей
+  payment_processing --> msk
+  msk --> accountant : Результат проведенных платежей
+  accountant --> payment_processing : Данные платежа
+}
+
+@enduml
